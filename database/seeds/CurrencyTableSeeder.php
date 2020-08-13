@@ -12,7 +12,7 @@ class CurrencyTableSeeder extends Seeder
      */
     public function run()
     {
-        $currecies = ['usd', 'eur', 'gbp'];
+        $currecies = ['usd', 'eur', 'gbp', 'jpy'];
 
         foreach($currecies as $currency)
         {

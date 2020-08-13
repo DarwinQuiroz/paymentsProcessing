@@ -78,13 +78,15 @@ class PaypalService
 
     public function createOrder($value, $currency)
     {
+        $factor = $this->resolveFactor($currency);
+
         $formParams = [
             'intent' => 'CAPTURE',
             'purchase_units' => [
                 0 => [
                     'amount' => [
                         'currency_code' => strtoupper($currency),
-                        'value' => $value,
+                        'value' => round($value * $factor) / $factor,
                     ]
                 ]
             ],
@@ -107,5 +109,17 @@ class PaypalService
         ];
 
         return $this->makeRequest('POST', "/v2/checkout/orders/{$approvalId}/capture", [], [], $headers);
+    }
+
+    public function resolveFactor($currency)
+    {
+        $zeroDecimalCurrencies = ['JPY'];
+
+        if(in_array(strtoupper($currency), $zeroDecimalCurrencies))
+        {
+            return 1;
+        }
+
+        return 100;
     }
 }
