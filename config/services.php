@@ -13,6 +13,10 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    'currency_conversion' => [
+        'base_uri' => env('CURRENCY_CONVERSION_BASE_URI'),
+        'api_key' => env('CURRENCY_CONVERSION_API_KEY'),
+    ],
 
     'mailgun' => [
         'domain' => env('MAILGUN_DOMAIN'),
