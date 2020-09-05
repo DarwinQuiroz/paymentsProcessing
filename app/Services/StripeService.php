@@ -22,7 +22,7 @@ class StripeService
 
     public function resolveAuthorization(&$queryParams, &$formParams, &$headers)
     {
-
+        $headers['Authorization'] = $this->resolveAccessToken();
     }
 
     public function decodeResponse($response)
@@ -32,14 +32,63 @@ class StripeService
 
     public function resolveAccessToken()
     {
+        return "Bearer {$this->secret}";
     }
 
     public function handlePayment(Request $request)
     {
+        $request->validate(['payment_method' => 'required']);
+
+        $intent = $this->createIntent($request->value, $request->currency, $request->payment_method);
+        session()->put('paymentIntentId', $intent->id);
+
+        return redirect()->route('approval');
     }
 
     public function handleApproval()
     {
+        if(session()->has('paymentIntentId'))
+        {
+            $paymentIntentId = session()->get('paymentIntentId');
+            $confirmation = $this->confirmPayment($paymentIntentId);
+
+            if($confirmation->status == 'requires_source_action')
+            {
+                $clientSecret = $confirmation->client_secret;
+                return view('stripe.3d-secure')->with([
+                    'clientSecret' => $clientSecret
+                ]);
+            }
+            if($confirmation->status == 'succeeded')
+            {
+                $name = $confirmation->charges->data[0]->billing_details->name;
+                $currency = strtoupper($confirmation->currency);
+                $amount = $confirmation->amount / $this->resolveFactor($currency);
+
+                return redirect()->route('home')
+                ->withSuccess(['payment' => "Gracias {$name}, hemos recibido tu pago por {$amount} {$currency}"]);
+            }
+        }
+
+        return redirect()->route('home')
+        ->withErrors('No se pudo confirmar el pago, por favor intente de nuevo.');
+    }
+
+    public function createIntent($value, $currency, $paymentMethod)
+    {
+        $formParams = [
+            'amount' => round($value * $this->resolveFactor($currency)),
+            'currency' => strtolower($currency),
+            'payment_method' => $paymentMethod,
+            'confirmation_method' => 'manual',
+        ];
+
+        return $this->makeRequest('POST', '/v1/payment_intents', $formParams);
+    }
+
+    public function confirmPayment($paymentIntentId)
+    {
+        return $this->makeRequest('POST', "/v1/payment_intents/{$paymentIntentId}/confirm");
     }
 
     public function resolveFactor($currency)
