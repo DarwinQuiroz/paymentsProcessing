@@ -39,6 +39,16 @@ return [
         'class' => App\Services\PaypalService::class,
     ],
 
+    'payu' => [
+        'base_uri' => env('PAYU_BASE_URI'),
+        'account_id' => env('PAYU_ACCOUNT_ID'),
+        'merchant_id' => env('PAYU_MERCHANT_ID'),
+        'key' => env('PAYU_KEY'),
+        'secret' => env('PAYU_SECRET'),
+        'base_currency' => 'usd',
+        'class' => App\Services\PayUService::class,
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
